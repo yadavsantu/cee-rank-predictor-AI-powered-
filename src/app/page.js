@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 export default function Home() {
   const [score, setScore] = useState('');
-  const [rank, setRank] = useState(null);
+  const [rankRange, setRankRange] = useState(null);
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
 
@@ -27,25 +27,40 @@ export default function Home() {
 
     if (isNaN(numericScore) || numericScore < 0 || numericScore > 200) {
       setError('❌ Please enter a valid score between 0 and 200.');
-      setRank(null);
+      setRankRange(null);
       return;
     }
 
     if (numericScore < 100) {
       setError('❌ Rank prediction is not supported for scores below 100.');
-      setRank(null);
+      setRankRange(null);
       return;
     }
 
     setError('');
-    const res = await fetch('http://127.0.0.1:5000/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: numericScore })
-    });
+    try {
+      const res = await fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: numericScore }),
+      });
 
-    const data = await res.json();
-    setRank(data.predicted_rank);
+      const data = await res.json();
+
+      if (res.ok) {
+        setRankRange({
+          lower: data.lower_rank,
+          upper: data.upper_rank,
+          median: data.median_rank
+        });
+      } else {
+        setError(data.error || 'Something went wrong with prediction.');
+        setRankRange(null);
+      }
+    } catch (err) {
+      setError('⚠️ Failed to connect to prediction server.');
+      setRankRange(null);
+    }
   };
 
   return (
@@ -54,7 +69,7 @@ export default function Home() {
       <header className="w-full bg-gray-900 text-white shadow-md py-4 px-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <img src="/cee-logo.png" alt="CEE Logo" className="w-12 h-12 object-contain" />
-          <h1 className="text-2xl font-semibold">🎓 CEE Rank Predictor (AI-Powered) </h1>
+          <h1 className="text-2xl font-semibold">🎓 CEE Rank Predictor (AI-Powered)</h1>
         </div>
       </header>
 
@@ -77,13 +92,8 @@ export default function Home() {
               required
             />
 
-            {warning && (
-              <p className="text-yellow-400 text-sm">{warning}</p>
-            )}
-
-            {error && (
-              <p className="text-red-400 text-sm font-medium">{error}</p>
-            )}
+            {warning && <p className="text-yellow-400 text-sm">{warning}</p>}
+            {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
 
             <button
               type="submit"
@@ -93,10 +103,13 @@ export default function Home() {
             </button>
           </form>
 
-          {rank !== null && (
-            <p className="mt-6 text-center text-lg text-green-400 font-semibold">
-              📊 Predicted Rank: <strong>{rank}</strong>
-            </p>
+          {rankRange && (
+            <div className="mt-6 text-center text-green-400 font-semibold space-y-1">
+              <p>📊 Predicted Rank Range for Score {score}:</p>
+              <p>🔻 Lower Bound: <strong>{rankRange.lower}</strong></p>
+              <p>🔺 Upper Bound: <strong>{rankRange.upper}</strong></p>
+              <p>🎯 Median Rank: <strong>{rankRange.median}</strong></p>
+            </div>
           )}
         </div>
       </main>

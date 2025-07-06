@@ -1,37 +1,37 @@
 # 🎓 CEE Rank Predictor (AI-Powered)
 
-Welcome to the **CEE Rank Predictor**, a modern web app that uses **machine learning** to predict your rank based on CEE exam marks. Built with **Next.js**, **Tailwind CSS**, and a **Flask backend** running an AI model trained on **CEE UG 2021 result data**.
-
-> ⚠️ This AI model works only for scores **100 or above**, since it's trained on 2021 data where such cutoffs existed.
+This project predicts a student's possible rank range in the Common Entrance Examination (CEE) based on their obtained score using a machine learning model built with LightGBM quantile regression.
 
 ---
 
-## 🚀 Getting Started
+## 🧠 How the AI Rank Prediction Model Works
 
-### 🧑‍💻 Prerequisites
+This application uses **Machine Learning (ML)** to estimate a student’s **CEE rank range** based on their **score**. It predicts:
 
-- Node.js (v18+ recommended)
-- Python 3.10 or later
-- `pip` or `venv`
-- Flask installed
-- Backend model already trained (`model.pkl` etc.)
+- 🔻 **Lower Bound Rank**: Best-case rank estimate for the score  
+- 🔺 **Upper Bound Rank**: Worst-case rank estimate for the score  
+- 🎯 **Median Rank**: Most likely rank
+
+The core ML technique is **quantile regression** using the **LightGBM** framework, which models the distribution of ranks rather than a single value, providing a more informative prediction interval.
+
+### Data
+
+- Training data was sourced from CEE UG 2021 results, containing actual ranks and scores.
+- Data preprocessing involved scaling scores for better model training.
+
+### Model Details
+
+- Three LightGBM models were trained, each predicting a different quantile:
+  - α=0.1 (lower bound)
+  - α=0.5 (median)
+  - α=0.9 (upper bound)
+
+- The model predicts a range of ranks to reflect uncertainty and distribution spread in rank at a given score.
+
+### Performance
+
+- Evaluated using Mean Absolute Error (MAE).
+- Achieved MAE around 61.87 ranks, which is reasonable for an approximate rank predictor.
 
 ---
 
-### 🔧 Frontend Setup
-
-```bash
-# Clone the repo
-git clone https://github.com/your-username/cee-rank-predictor.git
-cd cee-rank-predictor
-
-# Install dependencies
-npm install
-
-# Run the development server
-npm run dev
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
-python app.py
